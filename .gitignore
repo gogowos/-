@@ -1,13 +1,12 @@
-node_modules
+﻿node_modules
 dist
-# 大视频文件（超过GitHub 100MB限制）
-pink.mp4
+# 澶ц棰戞枃浠讹紙瓒呰繃GitHub 100MB闄愬埗锛?pink.mp4
 red.mp4
 public/pink.mp4
 public/red.mp4
 *.docx
-卡片图片
-植物大战僵尸图片
+鍗＄墖鍥剧墖
+妞嶇墿澶ф垬鍍靛案鍥剧墖
 public/bgm.wav
 Firework_Simulator-main.zip
 *.zip
