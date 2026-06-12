@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -79,7 +79,7 @@
 <body>
 
 <header>
-  <a class="back-btn" href="/">← 返回主页</a>
+  <a class="back-btn" href="./">← 返回主页</a>
   <h1>📚 彩虹书城</h1>
 </header>
 
@@ -118,7 +118,7 @@ BOOKS.forEach(book => {
   card.onclick = function() {
     document.body.style.opacity = '0';
     document.body.style.transition = 'opacity 0.3s';
-    setTimeout(function() { location.href = '/read.html?id=' + book.id; }, 300);
+    setTimeout(function() { location.href = './read.html?id=' + book.id; }, 300);
   };
   card.innerHTML =
     '<div class="book-cover" style="background:' + book.cover + '">' +

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="main-layout" @click="showCards = !showCards">
     <!-- 大标题 -->
     <div class="main-title">{{ configdata.welcometitle }}</div>
@@ -80,16 +80,16 @@ export default {
       }
     },
     handleCardAction(key, event) {
-      if (key === 0) { location.href = '/blessing.html'; return; }
+      if (key === 0) { location.href = './blessing.html'; return; }
       if (key === 1) {
         window.dispatchEvent(new CustomEvent('toggle-falling-text'));
         this.projectcards[key].show = !this.projectcards[key].show;
         this.projectcardsShow(key);
         return;
       }
-      if (key === 2) { location.href = '/firework.html'; return; }
-      if (key === 5) { location.href = '/pvz.html'; return; }
-      if (key === 6) { location.href = '/books.html'; return; }
+      if (key === 2) { location.href = './firework.html'; return; }
+      if (key === 5) { location.href = './pvz.html'; return; }
+      if (key === 6) { location.href = './books.html'; return; }
       this.projectcards[key].show = !this.projectcards[key].show;
       this.projectcardsShow(key);
     }

@@ -183,7 +183,7 @@ function toggleEyeMode() {
   try { localStorage.setItem('readEyeMode', eyeMode?'1':'0'); } catch(e){}
 }
 
-function goBack() { location.href = '/books.html'; }
+function goBack() { location.href = './books.html'; }
 
 document.addEventListener('keydown', function(e) {
   if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); nextChapter(); }
