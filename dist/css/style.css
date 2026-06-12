@@ -1,0 +1,47 @@
+@font-face {
+    font-family: "myfont";
+    src: url("../fonts/faken.ttf");
+    font-display: swap;
+}
+@font-face {
+    font-family: "digitalfont";
+    src: url("../fonts/Digital-Play-Italic-St-1.ttf");
+    font-display: swap;
+}
+
+:root {
+    --birthday-pink: #FF6B9D;
+    --birthday-gold: #FFD700;
+    --birthday-warm: #FF8C69;
+}
+
+/* 隐藏滚动条 */
+::-webkit-scrollbar {
+    width: 0px;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: var(--main_text_color, #000000);
+    border-radius: 8px;
+    height: 20%;
+}
+
+::-webkit-scrollbar-track {
+    background-color: var(--main_bg_color, linear-gradient(50deg, #ffecd2, #fcb69f));
+}
+
+body {
+    background-color: #2c1b1b;
+    margin: 0;
+    overflow: hidden;
+}
+
+.v-selection-control-group {
+    justify-content: center;
+}
+.v-snackbar__content {
+    text-align: center !important;
+}
+.v-card-item {
+    padding: 0.2rem 1rem !important;
+}
