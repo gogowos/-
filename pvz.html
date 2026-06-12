@@ -1,0 +1,770 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1100, initial-scale=1.0">
+<title>🎉 植物大战僵尸 - 欢乐派对</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  width:100vw;height:100vh;overflow:hidden;
+  background:#1a2e1a;font-family:'Microsoft YaHei',sans-serif;
+  display:flex;align-items:center;justify-content:center;user-select:none;
+}
+#battlefield{
+  position:relative;width:1100px;height:550px;
+  border-radius:14px;overflow:hidden;cursor:crosshair;
+  box-shadow:0 0 0 8px #5d3a1a,0 0 0 12px #8b5e3c,0 20px 60px rgba(0,0,0,0.5);
+  background:#2d6b14;
+}
+/* 背景图层 */
+#bgLayer{
+  position:absolute;inset:0;z-index:0;
+  background-size:cover;background-position:center;
+}
+/* 草坪纹理 */
+#lawn{
+  position:absolute;bottom:0;left:0;right:0;height:74%;pointer-events:none;z-index:1;
+  background:repeating-linear-gradient(0deg,transparent,transparent 22px,rgba(255,255,255,0.03) 22px,rgba(255,255,255,0.03) 23px),
+              repeating-linear-gradient(90deg,transparent,transparent 54px,rgba(255,255,255,0.02) 54px,rgba(255,255,255,0.02) 55px);
+}
+#fence{
+  position:absolute;bottom:0;left:0;right:0;height:14px;z-index:10;
+  background:repeating-linear-gradient(90deg,#c49a6c 0px,#c49a6c 52px,#8b5e3c 52px,#8b5e3c 54px);
+  border-radius:0 0 12px 12px;border-top:2px solid #a67c52;
+}
+#house{
+  position:absolute;left:8px;top:12px;z-index:5;
+  width:80px;height:70px;background:linear-gradient(180deg,#e8d5b7,#c4956a);
+  border-radius:6px 6px 0 0;border:3px solid #8b5e3c;
+  display:flex;align-items:center;justify-content:center;font-size:28px;
+}
+#house::after{
+  content:'';position:absolute;top:-22px;left:-3px;right:-3px;height:22px;
+  background:linear-gradient(180deg,#c0392b,#a93226);border-radius:4px 4px 0 0;border:3px solid #7b241c;
+}
+
+/* 网格 */
+.grid-cell{
+  position:absolute;z-index:2;pointer-events:none;
+  border:1px dashed rgba(255,255,255,0.06);border-radius:4px;transition:background 0.2s;
+}
+.grid-cell.highlight{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.3);}
+
+/* 顶部UI */
+#topUI{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:50;
+  display:flex;gap:12px;align-items:center;
+  background:rgba(0,0,0,0.45);backdrop-filter:blur(12px);
+  padding:6px 16px;border-radius:20px;border:1px solid rgba(255,255,255,0.15);
+}
+.stat-badge{color:#fff;font-size:13px;font-weight:600;display:flex;align-items:center;gap:5px;}
+.stat-badge span{color:#ffd740;}
+
+#closeBtn,#musicBtn{
+  position:absolute;z-index:50;width:30px;height:30px;border-radius:50%;
+  background:rgba(0,0,0,0.4);backdrop-filter:blur(10px);
+  border:1.5px solid rgba(255,255,255,0.3);color:#fff;font-size:14px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.3s;
+}
+#closeBtn{top:8px;right:12px}
+#musicBtn{top:8px;right:52px}
+#closeBtn:hover{background:rgba(255,50,50,0.6);border-color:#ff5252;transform:scale(1.1)}
+#musicBtn:hover{background:rgba(76,175,80,0.5);border-color:#66bb6a}
+#musicBtn.muted{opacity:0.5}
+
+/* 滚轮机 */
+#plantPanel{
+  position:absolute;left:6px;top:85px;bottom:20px;width:175px;z-index:30;
+  background:rgba(0,0,0,0.35);backdrop-filter:blur(6px);
+  border-radius:10px;border:1px solid rgba(255,255,255,0.12);overflow:hidden;pointer-events:none;
+}
+#plantPanelLabel{
+  position:absolute;left:6px;top:62px;z-index:31;
+  color:rgba(255,255,255,0.6);font-size:10px;text-align:center;width:175px;
+}
+
+/* 植物卡片（滚轮机上）*/
+.plant-card{
+  position:absolute;z-index:32;cursor:pointer;pointer-events:auto;
+  width:116px;height:72px;background:rgba(0,0,0,0.5);
+  border:2px solid #66bb6a;border-radius:10px;
+  display:flex;align-items:center;gap:4px;padding:4px 6px;
+  box-shadow:0 3px 10px rgba(0,0,0,0.3);transition:transform 0.1s,box-shadow 0.1s;
+}
+.plant-card:hover{transform:scale(1.04);box-shadow:0 5px 16px rgba(0,0,0,0.4);border-color:#a5d6a7}
+.plant-card.selected{border-color:#ffd740!important;box-shadow:0 0 16px rgba(255,215,64,0.5)!important;transform:scale(1.06)}
+.plant-card img{width:50px;height:50px;object-fit:contain;flex-shrink:0}
+.plant-card-info{display:flex;flex-direction:column;gap:1px}
+.plant-card-name{font-size:10px;color:#fff;font-weight:700}
+.plant-card-hp{font-size:8px;color:#c8e6c9}
+
+/* 战场上的精灵 */
+.sprite-on-field{
+  position:absolute;z-index:8;pointer-events:none;
+  will-change:transform;contain:layout style paint;
+}
+.sprite-on-field.clickable{pointer-events:auto;cursor:pointer}
+.sprite-on-field img{display:block;image-rendering:pixelated}
+.sprite-hp{
+  position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);
+  font-size:9px;color:#fff;background:rgba(0,0,0,0.5);
+  padding:1px 5px;border-radius:8px;white-space:nowrap;
+}
+.sprite-on-field.damaged{animation:plantShake 0.3s ease;filter:brightness(2)}
+@keyframes plantShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+/* 僵尸精灵 */
+.zombie-sprite{
+  position:absolute;z-index:7;pointer-events:none;
+  will-change:transform;contain:layout style paint;
+}
+.zombie-sprite img{display:block;image-rendering:pixelated}
+.zombie-sprite.hurt{animation:zombieHurt 0.3s ease;filter:brightness(2.5) saturate(0)}
+.zombie-sprite.dying{
+  animation:zombieDie 0.7s ease forwards;pointer-events:none;
+}
+.zombie-sprite.frozen{filter:brightness(1.5) saturate(0.3) hue-rotate(190deg)!important}
+@keyframes zombieHurt{
+  0%,100%{transform:translateX(0)}20%{transform:translateX(-10px)}40%{transform:translateX(10px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}
+}
+@keyframes zombieDie{
+  0%{transform:rotate(0) scale(1);opacity:1}
+  40%{transform:rotate(-25deg) scale(1.05);opacity:0.7}
+  100%{transform:rotate(-70deg) translateY(50px) scale(0.5);opacity:0}
+}
+.zombie-slow img{filter:brightness(1.3) saturate(0.6) hue-rotate(190deg)}
+
+/* 子弹精灵 */
+.bullet-sprite{
+  position:absolute;z-index:20;pointer-events:none;
+  will-change:transform;contain:layout style paint;
+}
+.bullet-sprite img{display:block;image-rendering:pixelated}
+
+/* 血条 */
+.health-bar{
+  position:absolute;top:-14px;left:50%;transform:translateX(-50%);
+  width:50px;height:6px;background:rgba(0,0,0,0.5);border-radius:3px;
+  z-index:9;overflow:hidden;border:1px solid rgba(0,0,0,0.3);
+}
+.health-bar-fill{height:100%;background:linear-gradient(90deg,#ff1744,#ff5252);border-radius:2px;transition:width 0.15s}
+
+/* 击中特效 */
+.hit-spark{
+  position:absolute;z-index:25;pointer-events:none;
+  width:8px;height:8px;background:#fff;border-radius:50%;
+  box-shadow:0 0 6px 3px rgba(255,255,255,0.9),0 0 16px 6px rgba(255,255,100,0.5);
+  animation:sparkPop 0.4s ease forwards;
+}
+@keyframes sparkPop{0%{transform:scale(0);opacity:1}100%{transform:scale(3.5);opacity:0}}
+
+/* 掉落卡片 */
+.drop-card{
+  position:absolute;z-index:30;cursor:pointer;
+  width:80px;height:100px;background:linear-gradient(180deg,#fff8e1,#ffe082);
+  border-radius:10px;border:2px solid #f9a825;
+  box-shadow:0 6px 20px rgba(0,0,0,0.25),0 0 0 4px rgba(249,168,37,0.3);
+  animation:cardDrop 0.4s ease forwards,cardFloat 2.5s ease-in-out 0.4s infinite;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;
+}
+.drop-card:hover{transform:scale(1.08);box-shadow:0 10px 30px rgba(0,0,0,0.35),0 0 0 6px rgba(249,168,37,0.5)}
+@keyframes cardDrop{0%{transform:translateY(-60px) scale(0.3);opacity:0}60%{transform:translateY(5px) scale(1.05);opacity:1}100%{transform:translateY(0) scale(1);opacity:1}}
+@keyframes cardFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.drop-card-icon{font-size:32px}
+.drop-card-text{font-size:10px;color:#e65100;font-weight:700;margin-top:2px}
+
+/* 奖励文字 */
+.reward-text{
+  position:absolute;z-index:35;pointer-events:none;
+  color:#ffd740;font-size:22px;font-weight:900;
+  text-shadow:0 0 10px rgba(255,215,64,0.8),0 2px 4px rgba(0,0,0,0.5);
+  animation:rewardPop 1.8s ease forwards;
+}
+@keyframes rewardPop{0%{transform:scale(0.5) translateY(0);opacity:1}40%{transform:scale(1.3) translateY(-30px);opacity:1}100%{transform:scale(1) translateY(-70px);opacity:0}}
+
+/* 弹窗 */
+.modal-overlay{
+  position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;animation:fadeIn 0.3s ease;
+}
+.modal-overlay.hide{display:none}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal-box{
+  background:#fff;border-radius:20px;padding:20px;max-width:500px;max-height:80vh;width:90%;
+  box-shadow:0 24px 80px rgba(0,0,0,0.3);position:relative;text-align:center;
+  animation:modalPop 0.35s cubic-bezier(0.18,0.89,0.32,1.28);
+}
+@keyframes modalPop{0%{transform:scale(0.7);opacity:0}100%{transform:scale(1);opacity:1}}
+.modal-box img{max-width:100%;max-height:65vh;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.15)}
+.modal-close{
+  position:absolute;top:-12px;right:-12px;width:32px;height:32px;border-radius:50%;
+  background:#fff;border:2px solid #ddd;font-size:16px;cursor:pointer;color:#888;
+  display:flex;align-items:center;justify-content:center;transition:all 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.12);
+}
+.modal-close:hover{background:#ff5252;color:#fff;border-color:#ff5252}
+
+/* 开始/结束画面 */
+.overlay-screen{
+  position:absolute;inset:0;z-index:60;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  pointer-events:auto;
+}
+.overlay-screen.hide{display:none}
+.overlay-btn{
+  padding:14px 48px;font-size:20px;font-weight:700;color:#fff;
+  background:linear-gradient(180deg,#f44336,#c62828);border:3px solid #b71c1c;
+  border-radius:30px;cursor:pointer;letter-spacing:0.1em;
+  box-shadow:0 6px 20px rgba(0,0,0,0.3);transition:all 0.2s;margin-top:16px;
+}
+.overlay-btn:hover{transform:scale(1.06);box-shadow:0 8px 28px rgba(0,0,0,0.45)}
+.overlay-title{
+  font-size:36px;font-weight:900;color:#fff;
+  text-shadow:0 3px 10px rgba(0,0,0,0.5),0 0 30px rgba(255,215,64,0.5);
+  text-align:center;line-height:1.4;
+}
+
+@media(max-width:1200px){#battlefield{width:96vw;height:auto;aspect-ratio:1100/550}}
+</style>
+</head>
+<body>
+
+<div id="battlefield">
+  <div id="bgLayer"></div>
+  <div id="lawn"></div>
+  <div id="fence"></div>
+  <div id="house">🏠</div>
+
+  <!-- 开始画面 -->
+  <div class="overlay-screen" id="startScreen">
+    <div class="overlay-title">🧟 植物大战僵尸 🧟<br><span style="font-size:16px;color:#ffd740;">🎉 欢乐派对版 🎉</span></div>
+    <button class="overlay-btn" id="startBtn">⚔️ 开始游戏</button>
+  </div>
+
+  <!-- 结束画面 -->
+  <div class="overlay-screen hide" id="gameOverScreen">
+    <div class="overlay-title">💀 僵尸闯入了房间！<br><span style="font-size:16px;">消灭了 <span id="finalScore" style="color:#ffd740;">0</span> 只僵尸</span></div>
+    <button class="overlay-btn" id="restartBtn">🔄 再来一局</button>
+  </div>
+
+  <!-- 顶部 UI -->
+  <div id="topUI">
+    <div class="stat-badge">🎯 消灭 <span id="scoreDisplay">0</span></div>
+    <div class="stat-badge">🧟 场上 <span id="zombieCount">0</span></div>
+    <div class="stat-badge">🌱 植物 <span id="plantCount">0</span></div>
+  </div>
+  <button id="closeBtn" onclick="location.href = './'">✕</button>
+  <button id="musicBtn" onclick="toggleMusic()" title="背景音乐">🎵</button>
+
+  <!-- 铲子 -->
+  <img id="shovel" src="/img/pvz/sprites/game/shovel.png" style="position:absolute;left:100px;top:2px;z-index:45;width:60px;cursor:pointer;filter:drop-shadow(0 3px 6px rgba(0,0,0,0.4));display:none;" alt="铲子">
+
+  <!-- 滚轮机 -->
+  <div id="plantPanelLabel">▼ 植物卡片 ▼</div>
+  <div id="plantPanel"></div>
+</div>
+
+<!-- 弹窗 -->
+<div class="modal-overlay hide" id="modal" onclick="closeModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeModalDirect()">✕</button>
+    <img id="modalImg" src="" alt="奖励图片">
+  </div>
+</div>
+
+<!-- 背景音乐 -->
+<audio id="bgMusic" loop preload="auto" style="display:none">
+  <source src="/bgm.mp3" type="audio/mpeg">
+</audio>
+
+
+<script>
+// ============================================================
+//  🌱 植物大战僵尸 - 原版精灵图 + 背景音乐
+// ============================================================
+
+const SPRITE_BASE = '/img/pvz/sprites/';
+
+// ===== 精灵图路径配置 =====
+const SPRITES = {
+  plants: {
+    repeater:  { card: SPRITE_BASE+'plants/Repeater5.png',  frames: [0,1,2,3,4].map(i=>SPRITE_BASE+'plants/Repeater'+i+'.png'),  w:55, h:53 },
+    snowPea:   { card: SPRITE_BASE+'plants/SnowPea5.png',   frames: [0,1,2,3,4].map(i=>SPRITE_BASE+'plants/SnowPea'+i+'.png'),   w:53, h:53 },
+    threePeat: { card: SPRITE_BASE+'plants/ThreePeater5.png',frames: [0,1,2,3,4].map(i=>SPRITE_BASE+'plants/ThreePeater'+i+'.png'),w:55, h:60 },
+    spikerock: { card: SPRITE_BASE+'plants/Spikerock5.png', frames: [0,1,2,3,4].map(i=>SPRITE_BASE+'plants/Spikerock'+i+'.png'), w:63, h:60 },
+    blover:    { card: SPRITE_BASE+'plants/Blover5.png',    frames: [0,1,2,3,4].map(i=>SPRITE_BASE+'plants/Blover'+i+'.png'),    w:68, h:60 },
+    wallNut:   { card: SPRITE_BASE+'plants/WallNut5.png',   frames: [0,1,2,3,4].map(i=>SPRITE_BASE+'plants/WallNut'+i+'.png'),   w:49, h:55 },
+  },
+  zombies: {
+    zombie0: { life: [0,1,2,3,4].map(i=>SPRITE_BASE+'zombies/zombie0'+i+'.png'), attack: [5,6,7,8,9].map(i=>SPRITE_BASE+'zombies/zombie0'+i+'.png'), w:125, h:108 },
+    zombie1: { life: [0,1,2,3,4].map(i=>SPRITE_BASE+'zombies/zombie1'+i+'.png'), attack: [5,6,7,8,9].map(i=>SPRITE_BASE+'zombies/zombie1'+i+'.png'), w:125, h:108 },
+    zombie2: { life: [0,1,2,3,4].map(i=>SPRITE_BASE+'zombies/zombie2'+i+'.png'), attack: [5,6,7,8,9].map(i=>SPRITE_BASE+'zombies/zombie2'+i+'.png'), w:125, h:108 },
+    zombie3: { life: [0,1,2,3,4,5].map(i=>SPRITE_BASE+'zombies/zombie3'+i+'.png'), attack: [6,7,8,9,10].map(i=>SPRITE_BASE+'zombies/zombie3'+i+'.png'), w:116, h:120 },
+  },
+  bullets: {
+    pea:  [0,1,2,3].map(i=>SPRITE_BASE+'bullets/PeaBullet'+i+'.png'),
+    snow: [0,1,2,3].map(i=>SPRITE_BASE+'bullets/SnowBullet'+i+'.png'),
+  },
+  shovel: SPRITE_BASE+'game/shovel.png',
+};
+
+// ===== 精灵图预加载 =====
+const preloadedImages = {};
+function preloadSprites() {
+  const allSrcs = [];
+  // 收集所有精灵路径
+  for (const [k, v] of Object.entries(SPRITES.plants)) {
+    allSrcs.push(v.card);
+    v.frames.forEach(f => allSrcs.push(f));
+  }
+  for (const [k, v] of Object.entries(SPRITES.zombies)) {
+    v.life.forEach(f => allSrcs.push(f));
+    v.attack.forEach(f => allSrcs.push(f));
+  }
+  for (const [k, v] of Object.entries(SPRITES.bullets)) {
+    v.forEach(f => allSrcs.push(f));
+  }
+  allSrcs.push(SPRITES.shovel);
+  // 预加载所有图片
+  let loaded = 0;
+  allSrcs.forEach(src => {
+    const img = new Image();
+    img.onload = img.onerror = () => { loaded++; };
+    img.src = src;
+    preloadedImages[src] = img;
+  });
+}
+
+// ===== 植物类型定义 =====
+const PLANT_TYPES = {
+  repeater:  { name:'豌豆射手', hp:3,  shootType:'pea',  bulletCount:1 },
+  snowPea:   { name:'寒冰射手', hp:5,  shootType:'snow', bulletCount:1 },
+  threePeat: { name:'三头豌豆', hp:7,  shootType:'pea',  bulletCount:3 },
+  spikerock: { name:'地刺',     hp:5,  shootType:null,   bulletCount:0 },
+  blover:    { name:'吹风草',   hp:3,  shootType:null,   bulletCount:0 },
+  wallNut:   { name:'坚果',     hp:10, shootType:null,   bulletCount:0 },
+};
+
+// ===== 僵尸类型定义 =====
+const ZOMBIE_TYPES = {
+  zombie0: { name:'铁桶僵尸', hp:20, speed:2, award:false },
+  zombie1: { name:'安全帽僵尸',hp:15, speed:3, award:false },
+  zombie2: { name:'旗子僵尸', hp:15, speed:3, award:false },
+  zombie3: { name:'足球僵尸', hp:25, speed:4, award:true },
+};
+
+// ===== 配置 =====
+const CONFIG = {
+  gridCols:9, gridRows:5, gridStartX:220, gridStartY:55, cellW:80, cellH:90,
+  zombieSpawnInterval:5000, plantSpawnInterval:5000,
+  shootInterval:500, attackInterval:1000, spikeDmgInterval:200,
+  bulletSpeed:4, zombieBaseSpeed:0.35,
+  rewardImages: [
+    '/img/pvz/1f368bf4f94b087e0a003f5af274c51f.jpg',
+    '/img/pvz/4dcf6a4e843a362737b66e7609faff9e.jpg',
+    '/img/pvz/5958ddb198a14166f712e320bb6b999f.jpg',
+    '/img/pvz/97fc3d016cdaed8b8b29243973939bf4.jpg',
+    '/img/pvz/9f5d41631d08a560460542521c899373.jpg',
+    '/img/pvz/123c631e8dfe14092c0741c8d5a26345.jpg',
+    '/img/pvz/e9a569a0ad1d8bbaed736f604b410e7b.jpg',
+  ],
+};
+
+// ===== 全局状态 =====
+const STATE={START:0,RUNNING:1,GAME_OVER:2};
+let gameState=STATE.START,score=0,gameLife=1;
+const battlefield=document.getElementById('battlefield');
+const gridCells=[];
+let plantsOnField=[],plantCards=[],zombies=[],bullets=[],dropCards=[];
+let shovelData={el:null,moving:false,x:100,y:2};
+let selectedCard=null,mouseX=0,mouseY=0,ghostPlant=null;
+
+// ===== 随机函数 =====
+function rand(min,max){return min+Math.random()*(max-min)}
+function randInt(min,max){return Math.floor(rand(min,max+1))}
+
+// ===== UI更新 =====
+function updateUI(){
+  document.getElementById('scoreDisplay').textContent=score;
+  document.getElementById('zombieCount').textContent=zombies.length;
+  document.getElementById('plantCount').textContent=plantsOnField.length;
+}
+
+// ===== 网格 =====
+function initGrid(){
+  const frag=document.createDocumentFragment();
+  for(let col=0;col<CONFIG.gridCols;col++)for(let row=0;row<CONFIG.gridRows;row++){
+    const cell=document.createElement('div');cell.className='grid-cell';
+    const x=CONFIG.gridStartX+col*CONFIG.cellW,y=CONFIG.gridStartY+row*CONFIG.cellH;
+    cell.style.left=x+'px';cell.style.top=y+'px';
+    cell.style.width=CONFIG.cellW+'px';cell.style.height=CONFIG.cellH+'px';
+    frag.appendChild(cell);gridCells.push({el:cell,x,y,col,row,occupied:false});
+  }
+  battlefield.appendChild(frag);
+}
+function findCell(x,y){for(const c of gridCells){if(x>=c.x&&x<c.x+CONFIG.cellW&&y>=c.y&&y<c.y+CONFIG.cellH)return c}return null}
+function findPlantAtCell(col,row){return plantsOnField.find(p=>p.gridCol===col&&p.gridRow===row)}
+
+// ===== 精灵辅助 =====
+function createSpriteImg(src, w, h) {
+  const img = document.createElement('img');
+  img.src = src;
+  img.style.width = w + 'px';
+  img.style.height = h + 'px';
+  img.style.willChange = 'auto'; // 避免不必要的合成层
+  return img;
+}
+function createAnimatedSprite(typeKey, type, w, h) {
+  // 预创建所有动画帧的 img 元素，切换 display 代替改 src
+  const container = document.createElement('div');
+  container.style.position = 'relative';
+  container.style.width = w + 'px';
+  container.style.height = h + 'px';
+  const frames = [];
+  let sprites;
+  if (type === 'plant') sprites = SPRITES.plants[typeKey].frames;
+  else if (type === 'zombie') sprites = SPRITES.zombies[typeKey].life;
+  else sprites = SPRITES.bullets[typeKey];
+
+  sprites.forEach((src, i) => {
+    const img = document.createElement('img');
+    img.src = src;
+    img.style.cssText = 'position:absolute;top:0;left:0;width:' + w + 'px;height:' + h + 'px;display:' + (i === 0 ? 'block' : 'none');
+    container.appendChild(img);
+    frames.push(img);
+  });
+  return { container, frames, currentFrame: 0 };
+}
+
+function setAnimatedFrame(spriteObj, frameIndex) {
+  if (frameIndex === spriteObj.currentFrame) return;
+  spriteObj.frames[spriteObj.currentFrame].style.display = 'none';
+  spriteObj.frames[frameIndex].style.display = 'block';
+  spriteObj.currentFrame = frameIndex;
+}
+
+function cycleFrameIdx(framesLen, counter) {
+  return counter % framesLen;
+}
+
+// ===== 植物卡片（滚轮机）=====
+function createPlantCard(typeKey){
+  const t=PLANT_TYPES[typeKey],s=SPRITES.plants[typeKey];
+  const card=document.createElement('div');card.className='plant-card';
+  card.innerHTML=`<img src="${s.card}" style="width:50px;height:50px;object-fit:contain"><div class="plant-card-info"><div class="plant-card-name">${t.name}</div><div class="plant-card-hp">❤️${t.hp}</div></div>`;
+  const panel=document.getElementById('plantPanel');
+  const pr=panel.getBoundingClientRect(),br=battlefield.getBoundingClientRect();
+  const startY=pr.bottom-br.top-90;
+  card.style.left='15px';card.style.top=startY+'px';
+  card.addEventListener('click',e=>{
+    e.stopPropagation();
+    if(gameState!==STATE.RUNNING)return;
+    const cd=plantCards.find(c=>c.el===card);
+    if(cd&&(cd.state==='wait'||cd.state==='stop')){
+      if(selectedCard){const p=plantCards.find(c=>c.typeKey===selectedCard);if(p)p.el.classList.remove('selected')}
+      selectedCard=typeKey;card.classList.add('selected');
+      if(shovelData.moving){shovelData.moving=false;shovelData.el.classList.remove('moving');shovelData.el.style.left=shovelData.x+'px';shovelData.el.style.top=shovelData.y+'px'}
+      createGhostPlant(typeKey);
+    }
+  });
+  battlefield.appendChild(card);
+  plantCards.push({el:card,typeKey,y:parseFloat(card.style.top),state:'wait'});
+}
+
+function createGhostPlant(typeKey){
+  removeGhostPlant();
+  const s=SPRITES.plants[typeKey],ghost=document.createElement('div');
+  ghost.className='sprite-on-field';ghost.id='ghostPlant';
+  ghost.style.opacity='0.55';ghost.style.pointerEvents='none';ghost.style.zIndex='55';
+  ghost.appendChild(createSpriteImg(s.frames[0],s.w,s.h));
+  ghost.style.left=(mouseX-s.w/2)+'px';ghost.style.top=(mouseY-s.h/2)+'px';
+  battlefield.appendChild(ghost);ghostPlant=ghost;
+}
+function removeGhostPlant(){if(ghostPlant){ghostPlant.remove();ghostPlant=null}}
+
+// ===== 放置植物 =====
+function placePlant(typeKey,col,row){
+  const cell=gridCells.find(c=>c.col===col&&c.row===row);
+  if(!cell||cell.occupied)return false;
+  const t=PLANT_TYPES[typeKey],s=SPRITES.plants[typeKey];
+  const sprite=createAnimatedSprite(typeKey,'plant',s.w,s.h);
+  const el=document.createElement('div');el.className='sprite-on-field'+(typeKey==='blover'?' clickable':'');
+  el.appendChild(sprite.container);
+  const hpEl=document.createElement('div');hpEl.className='sprite-hp';hpEl.textContent='❤️'+t.hp;el.appendChild(hpEl);
+  el.style.left=cell.x+'px';el.style.top=cell.y+'px';
+  if(typeKey==='blover'){el.addEventListener('click',e=>{e.stopPropagation();if(gameState===STATE.RUNNING){const p=plantsOnField.find(p=>p.el===el);if(p&&p.state==='life')blowAllZombies()}})}
+  battlefield.appendChild(el);cell.occupied=true;
+  plantsOnField.push({el,typeKey,hp:t.hp,maxHp:t.hp,gridCol:col,gridRow:row,x:cell.x,y:cell.y,state:'life',sprite});
+  updateUI();return true;
+}
+
+function removePlant(p){
+  p.el.remove();
+  const cell=gridCells.find(c=>c.col===p.gridCol&&c.row===p.gridRow);
+  if(cell)cell.occupied=false;
+  plantsOnField=plantsOnField.filter(x=>x!==p);updateUI();
+}
+
+// ===== 生成僵尸 =====
+function spawnZombie(){
+  if(gameState!==STATE.RUNNING)return;
+  const roll=randInt(0,19);
+  let typeKey;if(roll<5)typeKey='zombie0';else if(roll<10)typeKey='zombie1';else if(roll<15)typeKey='zombie2';else typeKey='zombie3';
+  const zt=ZOMBIE_TYPES[typeKey],zs=SPRITES.zombies[typeKey];
+  const row=randInt(0,CONFIG.gridRows-1);
+  const startX=1000+rand(0,60),startY=CONFIG.gridStartY+row*CONFIG.cellH;
+  const sprite=createAnimatedSprite(typeKey,'zombie',zs.w,zs.h);
+  const el=document.createElement('div');el.className='zombie-sprite';
+  el.appendChild(sprite.container);
+  const hpBar=document.createElement('div');hpBar.className='health-bar';
+  const hpFill=document.createElement('div');hpFill.className='health-bar-fill';hpFill.style.width='100%';
+  hpBar.appendChild(hpFill);el.appendChild(hpBar);
+  el.style.left=startX+'px';el.style.top=startY+'px';
+  battlefield.appendChild(el);
+  zombies.push({el,typeKey,hp:zt.hp,maxHp:zt.hp,x:startX,y:startY,speed:zt.speed*CONFIG.zombieBaseSpeed,baseSpeed:zt.speed*CONFIG.zombieBaseSpeed,state:'life',frozen:false,hpFill,sprite,animState:'life'});
+  updateUI();
+}
+
+// ===== 僵尸死亡 =====
+function killZombie(z){
+  if(z.state==='dead')return;z.state='dead';z.el.classList.add('dying');
+  const zt=ZOMBIE_TYPES[z.typeKey];
+  if(zt.award)triggerAward(z);
+  spawnDropCard(z.x+83,z.y-20);score++;updateUI();
+  setTimeout(()=>{z.el.remove();zombies=zombies.filter(zb=>zb!==z);updateUI()},700);
+}
+
+function triggerAward(z){
+  const type=randInt(0,2);
+  if(type===0){showRewardText('💥 全屏清除！',z.x,z.y);[...zombies].forEach(zb=>{if(zb!==z&&zb.state==='life'){zb.state='dead';zb.el.classList.add('dying');score++;spawnDropCard(zb.x+83,zb.y-20);setTimeout(()=>{zb.el.remove();zombies=zombies.filter(x=>x!==zb);updateUI()},700)}})}
+  else{showRewardText('❄️ 全屏冻结！',z.x,z.y);zombies.forEach(zb=>{if(zb!==z&&zb.state==='life'){zb.frozen=true;zb.speed=0;zb.el.classList.add('frozen')}});setTimeout(()=>{zombies.forEach(zb=>{if(zb.frozen){zb.frozen=false;zb.speed=zb.baseSpeed;zb.el.classList.remove('frozen')}})},2000)}
+}
+function showRewardText(text,x,y){const el=document.createElement('div');el.className='reward-text';el.textContent=text;el.style.left=x+'px';el.style.top=(y-20)+'px';battlefield.appendChild(el);setTimeout(()=>el.remove(),1800)}
+
+function blowAllZombies(){showRewardText('💨 飓风吹走！',500,200);zombies.forEach(z=>{if(z.state==='life'){z.x=Math.min(z.x+600,1050);z.el.style.left=z.x+'px';z.el.style.transition='left 0.6s ease-out';setTimeout(()=>{z.el.style.transition=''},600)}})}
+
+// ===== 掉落卡片 =====
+function spawnDropCard(x,y){
+  const card=document.createElement('div');card.className='drop-card';
+  card.style.left=(x-40)+'px';card.style.top=(y-130)+'px';
+  const imgSrc=CONFIG.rewardImages[Math.random()*CONFIG.rewardImages.length|0];
+  card.innerHTML='<div class="drop-card-icon">🎁</div><div class="drop-card-text">点击查看</div>';
+  card.onclick=function(e){e.stopPropagation();openModal(imgSrc)};
+  battlefield.appendChild(card);dropCards.push(card);
+  setTimeout(()=>{if(card.parentNode){card.style.opacity='0';card.style.transition='opacity 0.5s';setTimeout(()=>{card.remove();dropCards=dropCards.filter(d=>d!==card)},500)}},10000);
+}
+
+// ===== 弹窗 =====
+function openModal(src){document.getElementById('modalImg').src=src;document.getElementById('modal').classList.remove('hide')}
+function closeModal(e){if(e.target===e.currentTarget)document.getElementById('modal').classList.add('hide')}
+function closeModalDirect(){document.getElementById('modal').classList.add('hide')}
+
+// ===== 特效 =====
+function hitEffect(x,y){for(let i=0;i<4;i++){const s=document.createElement('div');s.className='hit-spark';s.style.left=(x+rand(-5,5))+'px';s.style.top=(y+rand(-5,5))+'px';s.style.animationDelay=rand(0,0.06)+'s';battlefield.appendChild(s);setTimeout(()=>s.remove(),420)}}
+
+// ===== 射击 =====
+function shootBullets(){
+  if(gameState!==STATE.RUNNING)return;
+  plantsOnField.forEach(p=>{
+    if(p.state!=='life')return;
+    const t=PLANT_TYPES[p.typeKey];if(!t.shootType)return;
+    const s=SPRITES.plants[p.typeKey];
+    const bx=p.x+s.w,by=p.y+s.h/2-12;
+    if(t.bulletCount===1){createBullet(bx,by,t.shootType)}
+    else if(t.bulletCount===3){createBullet(bx,by-10,t.shootType);createBullet(bx,by+2,t.shootType);createBullet(bx,by+14,t.shootType)}
+  });
+}
+function createBullet(x,y,type){
+  const sprite=createAnimatedSprite(type,'bullet',24,24);
+  const el=document.createElement('div');el.className='bullet-sprite';
+  el.appendChild(sprite.container);
+  el.style.left=x+'px';el.style.top=y+'px';battlefield.appendChild(el);
+  bullets.push({el,x,y,type,sprite});
+}
+
+// ===== 僵尸攻击 =====
+function zombieAttack(){
+  if(gameState!==STATE.RUNNING)return;
+  zombies.forEach(z=>{if(z.state!=='life')return;
+    for(const p of plantsOnField){if(p.state!=='life'||p.typeKey==='spikerock')continue;
+      const ZW=SPRITES.zombies[z.typeKey].w,ZH=SPRITES.zombies[z.typeKey].h;
+      const PW=SPRITES.plants[p.typeKey].w,PH=SPRITES.plants[p.typeKey].h;
+      if(p.x>=z.x-PW&&p.x<=z.x+ZW&&p.y>=z.y-PH&&p.y<=z.y+ZH){
+        z.animState='attack';p.hp--;const hpEl=p.el.querySelector('.sprite-hp');if(hpEl)hpEl.textContent='❤️'+p.hp;
+        p.el.classList.remove('damaged');void p.el.offsetWidth;p.el.classList.add('damaged');
+        if(p.hp<=0)removePlant(p);break;
+      }
+    }
+  });
+}
+
+// ===== 地刺攻击 =====
+function spikerockDamage(){
+  if(gameState!==STATE.RUNNING)return;
+  plantsOnField.forEach(p=>{if(p.typeKey!=='spikerock'||p.state!=='life')return;
+    zombies.forEach(z=>{if(z.state!=='life')return;
+      const zcx=z.x+SPRITES.zombies[z.typeKey].w/2,zcy=z.y+SPRITES.zombies[z.typeKey].h/2;
+      if(zcx>p.x&&zcx<p.x+SPRITES.plants.spikerock.w&&zcy>p.y&&zcy<p.y+SPRITES.plants.spikerock.h){
+        z.hp--;z.hpFill.style.width=Math.max(0,z.hp/z.maxHp*100)+'%';z.el.classList.remove('hurt');void z.el.offsetWidth;z.el.classList.add('hurt');
+        if(z.hp<=0)killZombie(z);
+      }
+    });
+  });
+}
+
+// ===== 碰撞检测（AABB矩形重叠）=====
+function checkCollisions(){
+  for(let i=bullets.length-1;i>=0;i--){
+    const b=bullets[i],bLeft=b.x,bRight=b.x+24,bTop=b.y,bBottom=b.y+24;
+    for(const z of zombies){if(z.state!=='life')continue;
+      const ZW=SPRITES.zombies[z.typeKey].w,ZH=SPRITES.zombies[z.typeKey].h;
+      const zLeft=z.x,zRight=z.x+ZW,zTop=z.y,zBottom=z.y+ZH;
+      if(bLeft<zRight&&bRight>zLeft&&bTop<zBottom&&bBottom>zTop){
+        b.el.remove();bullets.splice(i,1);
+        if(b.type==='snow'){z.speed=CONFIG.zombieBaseSpeed*0.5;z.el.classList.add('zombie-slow');clearTimeout(z._slowTimeout);z._slowTimeout=setTimeout(()=>{if(z.state==='life'){z.speed=z.baseSpeed;z.el.classList.remove('zombie-slow')}},2000)}
+        z.hp--;z.hpFill.style.width=Math.max(0,z.hp/z.maxHp*100)+'%';z.el.classList.remove('hurt');void z.el.offsetWidth;z.el.classList.add('hurt');
+        hitEffect(b.x+12,b.y+12);
+        if(z.hp<=0)killZombie(z);break;
+      }
+    }
+  }
+}
+
+// ===== 精灵动画更新（每12帧≈200ms更新一次，大幅减少DOM操作） =====
+let animTick=0, animCounter=0;
+const ANIM_RATE = 12; // 每12帧更新动画（60fps÷12=5fps精灵动画，原版风格）
+function updateAnimations(){
+  animTick++;
+  if (animTick % ANIM_RATE !== 0) return;
+  animCounter++;
+  // 植物动画
+  for (let i = plantsOnField.length - 1; i >= 0; i--) {
+    const p = plantsOnField[i];
+    if (p.state === 'life') {
+      const s = SPRITES.plants[p.typeKey];
+      setAnimatedFrame(p.sprite, cycleFrameIdx(s.frames.length, animCounter));
+    }
+  }
+  // 僵尸动画
+  for (let i = zombies.length - 1; i >= 0; i--) {
+    const z = zombies[i];
+    if (z.state === 'life') {
+      const s = SPRITES.zombies[z.typeKey];
+      const frames = z.animState === 'attack' ? s.attack : s.life;
+      setAnimatedFrame(z.sprite, cycleFrameIdx(frames.length, animCounter));
+    }
+  }
+  // 子弹动画
+  for (let i = bullets.length - 1; i >= 0; i--) {
+    const b = bullets[i];
+    setAnimatedFrame(b.sprite, cycleFrameIdx(4, animCounter));
+  }
+}
+
+// ===== 主循环 =====
+let lastTime=0,zombieMoveAcc=0,zombieSpawnAcc=0,plantSpawnAcc=0;
+let frameSkip=0;
+function gameLoop(ts){
+  if(!lastTime)lastTime=ts;
+  const dt=Math.min(ts-lastTime,100);lastTime=ts;
+  frameSkip=(frameSkip+1)%2; // 隔帧运行昂贵操作
+  if(gameState===STATE.RUNNING){
+    // 子弹移动
+    for(let i=bullets.length-1;i>=0;i--){const b=bullets[i];b.x+=CONFIG.bulletSpeed;b.el.style.left=b.x+'px';if(b.x>1080){b.el.remove();bullets.splice(i,1)}}
+    // 僵尸移动
+    zombieMoveAcc+=dt;if(zombieMoveAcc>=45){zombieMoveAcc-=45;
+      for(const z of zombies){if(z.state==='life'){z.x-=z.speed;z.el.style.left=z.x+'px';if(z.x<30){gameLife--;z.el.remove();zombies=zombies.filter(zb=>zb!==z);updateUI();if(gameLife<=0)endGame()}}}
+    }
+    // 碰撞检测隔帧运行
+    if(frameSkip===0)checkCollisions();
+    zombieSpawnAcc+=dt;if(zombieSpawnAcc>=CONFIG.zombieSpawnInterval){zombieSpawnAcc-=CONFIG.zombieSpawnInterval;spawnZombie()}
+    plantSpawnAcc+=dt;if(plantSpawnAcc>=CONFIG.plantSpawnInterval){plantSpawnAcc-=CONFIG.plantSpawnInterval;const types=Object.keys(PLANT_TYPES);createPlantCard(types[randInt(0,types.length-1)])}
+    // 卡片滚动
+    for(let i=0;i<plantCards.length;i++){const c=plantCards[i];if(c.state==='wait'){c.y-=0.4;c.el.style.top=c.y+'px';if(c.y<=5){c.state='stop';c.y=5;c.el.style.top='5px'}}}
+    for(let i=1;i<plantCards.length;i++){const c=plantCards[i],prev=plantCards[i-1];if((c.state==='stop'||c.state==='wait')&&(prev.state==='stop'||prev.state==='wait')&&c.y<=prev.y+72){c.state='stop'}if(c.state==='stop'&&c.y>prev.y+72+5)c.state='wait'}
+    if(selectedCard&&plantCards.findIndex(c=>c.typeKey===selectedCard)===-1){selectedCard=null;removeGhostPlant()}
+    updateAnimations();
+  }
+  requestAnimationFrame(gameLoop);
+}
+
+// ===== 定时器 =====
+let shootTimer=null,attackTimer=null,spikeTimer=null;
+function startTimers(){shootTimer=setInterval(shootBullets,CONFIG.shootInterval);attackTimer=setInterval(zombieAttack,CONFIG.attackInterval);spikeTimer=setInterval(spikerockDamage,CONFIG.spikeDmgInterval)}
+function stopTimers(){if(shootTimer)clearInterval(shootTimer);if(attackTimer)clearInterval(attackTimer);if(spikeTimer)clearInterval(spikeTimer)}
+
+// ===== 背景音乐 =====
+const bgMusic=document.getElementById('bgMusic');
+let musicPlaying=false;
+function startMusic(){if(!musicPlaying){bgMusic.play().catch(()=>{});musicPlaying=true;document.getElementById('musicBtn').classList.remove('muted');document.getElementById('musicBtn').textContent='🎵'}}
+function stopMusic(){if(musicPlaying){bgMusic.pause();musicPlaying=false;document.getElementById('musicBtn').classList.add('muted');document.getElementById('musicBtn').textContent='🔇'}}
+function toggleMusic(){if(musicPlaying)stopMusic();else startMusic()}
+
+// ===== 游戏状态 =====
+function startGame(){
+  gameState=STATE.RUNNING;score=0;gameLife=1;updateUI();
+  document.getElementById('startScreen').classList.add('hide');
+  document.getElementById('gameOverScreen').classList.add('hide');
+  document.getElementById('shovel').style.display='block';
+  document.getElementById('plantPanelLabel').style.display='block';
+  document.getElementById('bgLayer').style.backgroundImage='url('+SPRITE_BASE+'game/bg1.jpg)';
+  startTimers();startMusic();
+  const types=Object.keys(PLANT_TYPES);for(let i=0;i<3;i++)setTimeout(()=>createPlantCard(types[randInt(0,types.length-1)]),i*400);
+  setTimeout(()=>spawnZombie(),1500);
+}
+function endGame(){
+  gameState=STATE.GAME_OVER;stopTimers();stopMusic();
+  document.getElementById('finalScore').textContent=score;
+  document.getElementById('gameOverScreen').classList.remove('hide');
+  document.getElementById('shovel').style.display='none';
+  document.getElementById('plantPanelLabel').style.display='none';
+  document.getElementById('bgLayer').style.backgroundImage='url('+SPRITE_BASE+'game/bg2.jpg)';
+  selectedCard=null;removeGhostPlant();shovelData.moving=false;if(shovelData.el)shovelData.el.classList.remove('moving');
+}
+function resetGame(){
+  [...zombies].forEach(z=>z.el.remove());zombies=[];
+  [...plantsOnField].forEach(p=>p.el.remove());plantsOnField=[];
+  [...plantCards].forEach(c=>c.el.remove());plantCards=[];
+  [...bullets].forEach(b=>b.el.remove());bullets=[];
+  [...dropCards].forEach(d=>d.remove());dropCards=[];
+  gridCells.forEach(c=>c.occupied=false);
+  selectedCard=null;removeGhostPlant();shovelData.moving=false;
+  if(shovelData.el){shovelData.el.classList.remove('moving');shovelData.el.style.left=shovelData.x+'px';shovelData.el.style.top=shovelData.y+'px'}
+  zombieMoveAcc=0;zombieSpawnAcc=0;plantSpawnAcc=0;
+  startGame();
+}
+
+// ===== 鼠标 =====
+battlefield.addEventListener('mousemove',e=>{
+  const r=battlefield.getBoundingClientRect();mouseX=e.clientX-r.left;mouseY=e.clientY-r.top;
+  if(ghostPlant){const s=selectedCard?SPRITES.plants[selectedCard]:null;const w=s?s.w:60;ghostPlant.style.left=(mouseX-w/2)+'px';ghostPlant.style.top=(mouseY-s.h/2)+'px'}
+  if(shovelData.moving&&shovelData.el){shovelData.el.style.left=(mouseX-30)+'px';shovelData.el.style.top=(mouseY-25)+'px'}
+  if(selectedCard||shovelData.moving){const cell=findCell(mouseX,mouseY);gridCells.forEach(c=>c.el.classList.remove('highlight'));if(cell&&((selectedCard&&!cell.occupied)||(shovelData.moving&&cell.occupied)))cell.el.classList.add('highlight')}
+});
+battlefield.addEventListener('click',e=>{
+  if(gameState!==STATE.RUNNING)return;
+  const r=battlefield.getBoundingClientRect(),cx=e.clientX-r.left,cy=e.clientY-r.top;
+  if(shovelData.moving){const cell=findCell(cx,cy);if(cell&&cell.occupied){const p=findPlantAtCell(cell.col,cell.row);if(p){removePlant(p);shovelData.moving=false;if(shovelData.el){shovelData.el.classList.remove('moving');shovelData.el.style.display='none';setTimeout(()=>{if(gameState===STATE.RUNNING&&shovelData.el){shovelData.el.style.display='block';shovelData.el.style.left=shovelData.x+'px';shovelData.el.style.top=shovelData.y+'px'}},5000)}}}return}
+  if(selectedCard){const cell=findCell(cx,cy);if(cell&&!cell.occupied){if(placePlant(selectedCard,cell.col,cell.row)){const ci=plantCards.findIndex(c=>c.typeKey===selectedCard);if(ci!==-1){plantCards[ci].el.remove();plantCards.splice(ci,1)}selectedCard=null;removeGhostPlant();gridCells.forEach(c=>c.el.classList.remove('highlight'))}}return}
+});
+document.getElementById('shovel').addEventListener('click',e=>{e.stopPropagation();if(gameState!==STATE.RUNNING)return;if(selectedCard){selectedCard=null;removeGhostPlant();plantCards.forEach(c=>c.el.classList.remove('selected'))}shovelData.moving=!shovelData.moving;if(shovelData.moving)shovelData.el.classList.add('moving');else{shovelData.el.classList.remove('moving');shovelData.el.style.left=shovelData.x+'px';shovelData.el.style.top=shovelData.y+'px'}gridCells.forEach(c=>c.el.classList.remove('highlight'))});
+document.getElementById('startBtn').addEventListener('click',startGame);
+document.getElementById('restartBtn').addEventListener('click',resetGame);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){selectedCard=null;removeGhostPlant();shovelData.moving=false;if(shovelData.el){shovelData.el.classList.remove('moving');shovelData.el.style.left=shovelData.x+'px';shovelData.el.style.top=shovelData.y+'px'}plantCards.forEach(c=>c.el.classList.remove('selected'));gridCells.forEach(c=>c.el.classList.remove('highlight'))}});
+
+// ===== 初始化 =====
+function init(){
+  preloadSprites();
+  initGrid();
+  shovelData.el=document.getElementById('shovel');
+  document.getElementById('bgLayer').style.backgroundImage='url('+SPRITE_BASE+'game/bg0.jpg)';
+  document.getElementById('startScreen').classList.remove('hide');
+  document.getElementById('shovel').style.display='none';
+  document.getElementById('plantPanelLabel').style.display='none';
+  updateUI();
+  requestAnimationFrame(gameLoop);
+}
+init();
+</script>
+</body>
+</html>

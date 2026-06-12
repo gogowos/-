@@ -1,0 +1,380 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎁 生日祝福</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    width:100vw; min-height:100vh;
+    background:linear-gradient(160deg, #fce4ec 0%, #f3e5f5 25%, #e8eaf6 50%, #e3f2fd 75%, #fff9c4 100%);
+    background-attachment:fixed;
+    overflow-x:hidden; overflow-y:auto;
+    font-family:'Microsoft YaHei','PingFang SC',sans-serif;
+    -webkit-tap-highlight-color:transparent;
+  }
+
+  /* ===== 雪花粒子 ===== */
+  .snow {
+    position:fixed; pointer-events:none; z-index:0;
+    border-radius:50%; opacity:0;
+    animation:snowFall linear infinite;
+  }
+  @keyframes snowFall {
+    0%   { transform:translateY(-10vh) rotate(0deg) scale(0.8); opacity:0; }
+    5%   { opacity:0.5; }
+    90%  { opacity:0.3; }
+    100% { transform:translateY(105vh) rotate(360deg) scale(1.2); opacity:0; }
+  }
+
+  /* ===== 确认弹窗 ===== */
+  .overlay {
+    position:fixed; inset:0; z-index:2000;
+    background:rgba(0,0,0,0.45);
+    display:flex; align-items:center; justify-content:center;
+    backdrop-filter:blur(4px);
+  }
+  .overlay.hide { display:none; }
+
+  .confirm-box {
+    background:rgba(255,255,255,0.95);
+    backdrop-filter:blur(20px);
+    border-radius:24px; padding:44px 32px 36px;
+    text-align:center; max-width:400px; width:92%;
+    box-shadow:0 24px 80px rgba(0,0,0,0.18), 0 0 0 1px rgba(255,255,255,0.8);
+    animation:popIn 0.5s cubic-bezier(0.18,0.89,0.32,1.28);
+  }
+  @keyframes popIn {
+    0% { transform:scale(0.5) translateY(30px); opacity:0; }
+    100% { transform:scale(1) translateY(0); opacity:1; }
+  }
+  .confirm-box .icon { font-size:56px; margin-bottom:8px; }
+  .confirm-box h2 { font-size:24px; margin-bottom:10px; color:#e91e63; }
+  .confirm-box p { font-size:15px; color:#888; margin-bottom:30px; line-height:1.7; }
+  .confirm-box .btns { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+  .confirm-box button {
+    padding:13px 38px; border:none; border-radius:30px;
+    font-size:16px; cursor:pointer; transition:all 0.3s; outline:none;
+    font-family:inherit; letter-spacing:0.05em;
+  }
+  .btn-yes {
+    background:linear-gradient(135deg,#ff6b9d,#e91e63);
+    color:#fff; box-shadow:0 6px 20px rgba(233,30,99,0.35);
+  }
+  .btn-yes:hover { transform:translateY(-2px); box-shadow:0 8px 28px rgba(233,30,99,0.5); }
+  .btn-yes:active { transform:scale(0.96); }
+  .btn-no { background:#f0f0f0; color:#888; }
+  .btn-no:hover { background:#e0e0e0; color:#555; }
+
+  /* ===== 祝福卡片 ===== */
+  .card {
+    position:fixed; z-index:100;
+    border-radius:16px; padding:20px 26px;
+    max-width:280px; min-width:100px;
+    box-shadow:0 10px 40px rgba(0,0,0,0.1), 0 0 0 1px rgba(255,255,255,0.5);
+    user-select:none; cursor:default;
+    animation:cardIn 0.55s cubic-bezier(0.18,0.89,0.32,1.28) forwards,
+               cardFloat 4s ease-in-out 0.55s infinite;
+    will-change:transform,opacity;
+  }
+  /* 毛玻璃卡片 */
+  .card.glass {
+    background:rgba(255,255,255,0.55);
+    backdrop-filter:blur(16px);
+    box-shadow:0 10px 40px rgba(0,0,0,0.08), 0 0 0 1px rgba(255,255,255,0.6);
+  }
+  .card.glass .card-text { color:#444; text-shadow:none; }
+
+  @keyframes cardIn {
+    0%   { transform:scale(0) rotate(-15deg) translateY(40px); opacity:0; }
+    55%  { transform:scale(1.06) rotate(2deg) translateY(-5px); opacity:1; }
+    75%  { transform:scale(0.97) rotate(-0.5deg) translateY(2px); }
+    100% { transform:scale(1) rotate(var(--rot,0deg)) translateY(0); opacity:1; }
+  }
+  @keyframes cardFloat {
+    0%,100% { transform:scale(1) rotate(var(--rot,0deg)) translateY(0); }
+    30%     { transform:scale(1.03) rotate(var(--rot,0deg)) translateY(-10px); }
+    60%     { transform:scale(0.98) rotate(var(--rot,0deg)) translateY(-3px); }
+  }
+
+  .card .close-btn {
+    position:absolute; top:-8px; right:-8px;
+    width:26px; height:26px; border-radius:50%;
+    background:#fff; border:1.5px solid rgba(0,0,0,0.1);
+    font-size:14px; line-height:24px; text-align:center;
+    color:#999; cursor:pointer; transition:all 0.25s;
+    box-shadow:0 2px 8px rgba(0,0,0,0.1);
+    z-index:2;
+  }
+  .card .close-btn:hover {
+    background:#ff5252; color:#fff; border-color:#ff5252;
+    transform:scale(1.15); box-shadow:0 4px 15px rgba(255,82,82,0.4);
+  }
+
+  .card .card-text {
+    font-size:inherit; text-shadow:0 1px 2px rgba(0,0,0,0.1);
+    word-break:break-word; line-height:1.6; padding-right:10px;
+    display:block;
+  }
+
+  /* 照片卡片 */
+  .card .card-photo {
+    width:100%; height:auto; border-radius:10px; margin-bottom:10px;
+    display:block; object-fit:cover; max-height:160px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.12);
+  }
+
+  /* ===== 重试按钮 ===== */
+  .retry-btn {
+    position:fixed; bottom:36px; left:50%; transform:translateX(-50%); z-index:300;
+    padding:15px 36px; border:none; border-radius:30px;
+    background:linear-gradient(135deg,#ff6b9d,#e91e63);
+    color:#fff; font-size:17px; cursor:pointer;
+    box-shadow:0 8px 30px rgba(233,30,99,0.45);
+    transition:all 0.35s; display:none;
+    font-family:inherit; letter-spacing:0.06em;
+    animation:btnPop 0.5s cubic-bezier(0.18,0.89,0.32,1.28);
+  }
+  .retry-btn.show { display:block; }
+  .retry-btn:hover { transform:translateX(-50%) translateY(-3px); box-shadow:0 12px 36px rgba(233,30,99,0.55); }
+  .retry-btn:active { transform:translateX(-50%) scale(0.95); }
+  @keyframes btnPop {
+    0% { transform:translateX(-50%) scale(0); opacity:0; }
+    100% { transform:translateX(-50%) scale(1); opacity:1; }
+  }
+
+  /* ===== 计数器 ===== */
+  .counter {
+    position:fixed; top:20px; left:50%; transform:translateX(-50%); z-index:300;
+    background:rgba(0,0,0,0.5); color:#fff; border-radius:20px;
+    padding:6px 18px; font-size:14px; letter-spacing:0.05em;
+    backdrop-filter:blur(10px); display:none;
+  }
+  .counter.show { display:block; }
+
+  /* ===== 响应式 ===== */
+  @media (max-width:600px) {
+    .card { max-width:200px; padding:14px 18px; border-radius:14px; }
+    .card .card-photo { max-height:100px; border-radius:8px; }
+    .card .close-btn { top:-6px; right:-6px; width:22px; height:22px; font-size:12px; line-height:20px; }
+    .confirm-box { padding:32px 20px 28px; }
+    .confirm-box h2 { font-size:20px; }
+    .retry-btn { bottom:24px; padding:13px 28px; font-size:15px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 雪花 -->
+<div id="snowContainer"></div>
+
+<!-- 确认弹窗 -->
+<div class="overlay" id="overlay">
+  <div class="confirm-box">
+    <div class="icon">🎂</div>
+    <h2>是否开启祝福礼物？</h2>
+    <p>一份特别的生日惊喜即将到来～<br>准备好了吗？</p>
+    <div class="btns">
+      <button class="btn-yes" onclick="start()">✨ 开启祝福</button>
+      <button class="btn-no" onclick="closeOverlay()">下次再说</button>
+    </div>
+  </div>
+</div>
+
+<!-- 计数器 -->
+<div class="counter" id="counter"></div>
+
+<!-- 重试按钮 -->
+<button class="retry-btn" id="retryBtn" onclick="retry()">🎁 再来一次</button>
+
+
+<script>
+// ======================== 配置区 ========================
+const BLESSINGS = [
+  '🎂 生日快乐！愿你岁岁平安', '🌟 万事如意，心想事成',
+  '💖 永远被爱包围', '🎉 天天开心没烦恼',
+  '🌸 青春永驻，美丽动人', '✨ 前程似锦，光芒万丈',
+  '🎁 所有愿望都实现', '🌈 生活如彩虹般绚烂',
+  '💫 平安喜乐每一天', '🍀 好运常伴左右',
+  '🎀 笑口常开，幸福满满', '💝 你是最特别的存在',
+  '⭐ 闪闪发光做自己', '🕊️ 自由自在追梦去',
+  '🌺 如花般绽放', '🎵 岁月为你歌唱',
+  '💎 珍贵无比的你', '🌙 夜夜有好梦',
+  '☀️ 阳光灿烂的日子', '🧸 永远可可爱爱',
+  '🍰 生活甜甜蜜蜜', '🎪 人生精彩纷呈',
+  '🏆 做自己的人生赢家', '💐 繁花似锦的未来',
+  '🦋 破茧成蝶，越来越好', '🌻 向阳而生，无畏风雨',
+  '🍭 每一天都甜甜的', '🎯 所有目标都达成',
+  '💪 元气满满每一天', '🥳 快乐永远不打烊',
+  '🎊 喜气洋洋过每天', '💗 被世界温柔以待',
+];
+// 照片列表（本地路径或外链，留空则只显示文字）
+const PHOTOS = [
+  // 示例：'/img/photo1.jpg', '/img/photo2.jpg',
+  // 填入你的照片路径即可自动出现在部分卡片里
+];
+const CARD_COUNT = 45;            // 卡片总数
+const POP_MIN = 180;              // 最小弹出间隔(ms)
+const POP_MAX = 350;              // 最大弹出间隔(ms)
+const COLORS = [
+  'linear-gradient(135deg,#ff6b9d,#ff8eb3)',
+  'linear-gradient(135deg,#ff9f43,#ffbe76)',
+  'linear-gradient(135deg,#a55eea,#d4a5ff)',
+  'linear-gradient(135deg,#4d96ff,#74b9ff)',
+  'linear-gradient(135deg,#6bcb77,#8fd99a)',
+  'linear-gradient(135deg,#ff6348,#ff8a80)',
+  'linear-gradient(135deg,#00bcd4,#4dd0e1)',
+  'linear-gradient(135deg,#e91e63,#f48fb1)',
+  'linear-gradient(135deg,#7c4dff,#b388ff)',
+  'linear-gradient(135deg,#ff6d00,#ffab40)',
+  'linear-gradient(135deg,#00c853,#69f0ae)',
+  'linear-gradient(135deg,#d500f9,#ea80fc)',
+  'linear-gradient(135deg,#ff5252,#ff8a80)',
+  'linear-gradient(135deg,#448aff,#83b9ff)',
+];
+const FONT_SIZES = [14,15,16,17,18,19,20];
+const GLASS_RATIO = 0.25;         // 毛玻璃卡片比例
+// ========================================================
+
+let cardIdx = 0, allDone = false;
+let activeCards = [];
+
+// 雪花
+(function snow() {
+  const c = document.getElementById('snowContainer');
+  for (let i=0;i<30;i++) {
+    const s = document.createElement('div');
+    s.className = 'snow';
+    const size = 3+Math.random()*7;
+    s.style.cssText = `
+      width:${size}px;height:${size}px;left:${Math.random()*100}%;
+      background:${['#ffcdd2','#e1bee7','#bbdefb','#fff9c4','#f8bbd0','#b3e5fc'][Math.random()*6|0]};
+      animation-duration:${8+Math.random()*14}s;
+      animation-delay:${Math.random()*10}s;
+    `;
+    c.appendChild(s);
+  }
+})();
+
+function closeOverlay() {
+  document.getElementById('overlay').classList.add('hide');
+}
+
+function start() {
+  closeOverlay();
+  cardIdx = 0; allDone = false; activeCards = [];
+  document.getElementById('retryBtn').classList.remove('show');
+  document.getElementById('counter').classList.add('show');
+  document.querySelectorAll('.card').forEach(el=>el.remove());
+  pop();
+}
+
+function pop() {
+  if (cardIdx >= CARD_COUNT) {
+    allDone = true;
+    document.getElementById('counter').classList.remove('show');
+    if (activeCards.length===0) document.getElementById('retryBtn').classList.add('show');
+    return;
+  }
+  document.getElementById('counter').textContent = `💌 ${cardIdx+1} / ${CARD_COUNT}`;
+
+  const card = createCard();
+  document.body.appendChild(card);
+  activeCards.push(card);
+  cardIdx++;
+  setTimeout(pop, POP_MIN + Math.random()*(POP_MAX-POP_MIN));
+}
+
+function createCard() {
+  const card = document.createElement('div');
+  card.className = 'card';
+
+  const text = BLESSINGS[Math.random()*BLESSINGS.length|0];
+  const color = COLORS[Math.random()*COLORS.length|0];
+  const fs = FONT_SIZES[Math.random()*FONT_SIZES.length|0];
+  const isGlass = Math.random() < GLASS_RATIO;
+  const hasPhoto = PHOTOS.length>0 && Math.random()<0.35;
+
+  if (isGlass) card.classList.add('glass');
+
+  // 位置（避开边缘和已有卡片密集区）
+  const pad = 10, cw = 280, ch = hasPhoto?200:100;
+  const maxW = innerWidth-cw-pad, maxH = innerHeight-ch-pad;
+  const left = pad + Math.random()*(maxW>0?maxW:50);
+  const top = pad + Math.random()*(maxH>0?maxH:50);
+
+  card.style.left = left+'px';
+  card.style.top = top+'px';
+  card.style.background = color;
+  card.style.fontSize = fs+'px';
+  card.style.setProperty('--rot',((Math.random()-0.5)*8).toFixed(2)+'deg');
+  card.style.animationDelay = Math.random()*0.2+'s, '+(0.55+Math.random()*0.3)+'s';
+
+  // 照片（如果有）
+  if (hasPhoto) {
+    const img = document.createElement('img');
+    img.className = 'card-photo';
+    img.src = PHOTOS[Math.random()*PHOTOS.length|0];
+    img.loading = 'lazy';
+    img.draggable = false;
+    card.appendChild(img);
+  }
+
+  // 关闭按钮
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'close-btn';
+  closeBtn.textContent = '✕';
+  closeBtn.onclick = function(e) {
+    e.stopPropagation();
+    closeCard(card);
+  };
+
+  // 文字
+  const textEl = document.createElement('span');
+  textEl.className = 'card-text';
+  textEl.textContent = text;
+
+  card.appendChild(closeBtn);
+  card.appendChild(textEl);
+  return card;
+}
+
+function closeCard(card) {
+  card.style.transition = 'all 0.35s cubic-bezier(0.55,0,1,0.45)';
+  card.style.transform = 'scale(0.2) rotate(20deg)';
+  card.style.opacity = '0';
+  card.style.pointerEvents = 'none';
+  setTimeout(()=>{
+    card.remove();
+    activeCards = activeCards.filter(c=>c!==card);
+    if (activeCards.length===0 && allDone) {
+      document.getElementById('retryBtn').classList.add('show');
+    }
+  },350);
+}
+
+function retry() {
+  document.getElementById('retryBtn').classList.remove('show');
+  document.querySelectorAll('.card').forEach(c=>{
+    c.style.transition='all 0.3s ease';
+    c.style.transform='scale(0.3) rotate(10deg)';
+    c.style.opacity='0';
+    setTimeout(()=>c.remove(),300);
+  });
+  activeCards=[];
+  setTimeout(()=>{ cardIdx=0; allDone=false; pop(); },400);
+}
+
+// 响应式防溢出
+window.addEventListener('resize',()=>{
+  document.querySelectorAll('.card').forEach(c=>{
+    const l=parseFloat(c.style.left), t=parseFloat(c.style.top);
+    if (l>innerWidth-60) c.style.left=Math.max(5,innerWidth-290)+'px';
+    if (t>innerHeight-40) c.style.top=Math.max(5,innerHeight-140)+'px';
+  });
+});
+</script>
+</body>
+</html>

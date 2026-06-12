@@ -1,0 +1,137 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📚 彩虹书城</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family:'Microsoft YaHei','PingFang SC',sans-serif;
+    background:linear-gradient(180deg, #f5f0eb 0%, #ede4da 100%);
+    min-height:100vh; color:#3e3232;
+    animation:fadeIn 0.5s ease;
+  }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+  header {
+    background:linear-gradient(135deg,#5d4037,#795548);
+    color:#fff; padding:20px 32px; text-align:center;
+    box-shadow:0 4px 20px rgba(0,0,0,0.15);
+    position:sticky; top:0; z-index:100;
+  }
+  header h1 { font-size:28px; letter-spacing:0.1em; }
+  header .back-btn {
+    position:absolute; left:24px; top:50%; transform:translateY(-50%);
+    color:#fff; text-decoration:none; font-size:15px;
+    padding:8px 18px; border:1px solid rgba(255,255,255,0.4);
+    border-radius:20px; transition:all 0.3s;
+  }
+  header .back-btn:hover { background:rgba(255,255,255,0.15); }
+
+  .container { max-width:900px; margin:0 auto; padding:32px 24px; }
+  .section-title {
+    font-size:22px; margin:0 0 24px; padding-left:14px;
+    border-left:4px solid #795548; color:#5d4037;
+  }
+  .books-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(360px, 1fr)); gap:28px; }
+
+  .book-card {
+    background:#fff; border-radius:16px; overflow:hidden;
+    box-shadow:0 4px 16px rgba(0,0,0,0.08);
+    cursor:pointer; transition:all 0.35s cubic-bezier(0.25,0.46,0.45,0.94);
+    display:flex; flex-direction:column;
+  }
+  .book-card:hover { transform:translateY(-8px); box-shadow:0 16px 40px rgba(0,0,0,0.15); }
+  .book-card:active { transform:scale(0.97); }
+
+  .book-cover {
+    height:200px; display:flex; align-items:center; justify-content:center;
+    font-size:56px; position:relative; overflow:hidden;
+  }
+  .book-cover::after {
+    content:''; position:absolute; bottom:0; left:0; right:0;
+    height:60px; background:linear-gradient(transparent,rgba(0,0,0,0.15));
+  }
+  .book-info { padding:20px 24px 24px; flex:1; display:flex; flex-direction:column; }
+  .book-info h3 { font-size:20px; margin-bottom:8px; color:#3e2723; }
+  .book-info .author { font-size:13px; color:#8d6e63; margin-bottom:12px; }
+  .book-info .desc {
+    font-size:14px; color:#888; line-height:1.8;
+    display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
+    overflow:hidden; flex:1;
+  }
+  .book-info .tag {
+    display:inline-block; margin-top:12px; padding:4px 14px;
+    background:#efebe9; border-radius:12px; font-size:12px; color:#795548;
+    align-self:flex-start;
+  }
+
+  @media (max-width:600px) {
+    header h1 { font-size:20px; }
+    header .back-btn { left:8px; font-size:12px; padding:5px 12px; }
+    .books-grid { grid-template-columns:1fr; }
+    .container { padding:16px 12px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="back-btn" href="./">← 返回主页</a>
+  <h1>📚 彩虹书城</h1>
+</header>
+
+<div class="container">
+  <div class="section-title">🔥 我的书架</div>
+  <div class="books-grid" id="booksGrid"></div>
+</div>
+
+<script>
+// ======================== 书籍数据 ========================
+const BOOKS = [
+  {
+    id: 1,
+    title: '背着i-kun跑',
+    author: '时空旅人',
+    desc: '2042年，时空社会学研究生林知予申请了一次短期时间投射——观测目标是2018年一个选秀节目的录制现场。她说着"群体情绪传播"的课题方向，但她的视线始终只落在一个人的身上……',
+    cover: 'linear-gradient(135deg, #ff6b9d, #c94b7c)',
+    emoji: '🎵',
+    tag: '时空穿越',
+  },
+  {
+    id: 2,
+    title: '和迪丽热巴做闺蜜，然后成了BLACKPINK成员',
+    author: '星野漫步',
+    desc: '六月的成都，热得像蒸笼。林星野蹲在面馆后厨的洗碗池前——她妈在外面招呼客人，嗓门大得隔着三条街都能听见。直到那个改变命运的机会出现……',
+    cover: 'linear-gradient(135deg, #ff4081, #1a1a2e)',
+    emoji: '⭐',
+    tag: '娱乐圈',
+  },
+];
+
+const grid = document.getElementById('booksGrid');
+BOOKS.forEach(book => {
+  const card = document.createElement('div');
+  card.className = 'book-card';
+  card.onclick = function() {
+    document.body.style.opacity = '0';
+    document.body.style.transition = 'opacity 0.3s';
+    setTimeout(function() { location.href = './read.html?id=' + book.id; }, 300);
+  };
+  card.innerHTML =
+    '<div class="book-cover" style="background:' + book.cover + '">' +
+      '<span>' + book.emoji + '</span>' +
+    '</div>' +
+    '<div class="book-info">' +
+      '<h3>' + book.title + '</h3>' +
+      '<div class="author">✍ ' + book.author + '</div>' +
+      '<div class="desc">' + book.desc + '</div>' +
+      '<span class="tag">' + book.tag + '</span>' +
+    '</div>';
+  grid.appendChild(card);
+});
+</script>
+</body>
+</html>
