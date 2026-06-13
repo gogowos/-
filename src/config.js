@@ -31,7 +31,7 @@
 			"datainfo": {
 				"title": "生日视频背景",
 				"preview": "",
-				"url": "./69896b3a-21bb-45be-9649-355989c96231.mp4"
+				"url": "./pink.mp4"
 			},
 		},
 		"mobile": {
@@ -39,7 +39,7 @@
 			"datainfo": {
 				"title": "生日视频背景",
 				"preview": "",
-				"url": "./69896b3a-21bb-45be-9649-355989c96231.mp4"
+				"url": "./pink.mp4"
 			}
 		}
 	},
@@ -89,14 +89,14 @@
 			{
 				"title": "生日视频背景",
 				"preview": "",
-				"url": "./69896b3a-21bb-45be-9649-355989c96231.mp4"
+				"url": "./pink.mp4"
 			},
 		],
 		videoMobile: [
 			{
 				"title": "生日视频背景",
 				"preview": "",
-				"url": "./69896b3a-21bb-45be-9649-355989c96231.mp4"
+				"url": "./pink.mp4"
 			},
 		],
 	},
